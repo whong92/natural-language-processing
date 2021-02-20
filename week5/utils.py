@@ -2,6 +2,8 @@ import nltk
 import pickle
 import re
 import numpy as np
+import csv
+from tqdm import tqdm
 
 nltk.download('stopwords')
 from nltk.corpus import stopwords
@@ -43,15 +45,15 @@ def load_embeddings(embeddings_path):
     # Note that here you also need to know the dimension of the loaded embeddings.
     # When you load the embeddings, use numpy.float32 type as dtype
 
-    ########################
-    #### YOUR CODE HERE ####
-    ########################
+    starspace_embeddings = {}
+    embeddings_dim = 0
+    with open (embeddings_path, 'r') as fp:
+      rows = csv.reader(fp, delimiter='\t')
+      for row in tqdm(rows):
+        starspace_embeddings[row[0]] = np.array([float(v) for v in row[1:]], dtype=np.float32)
+        embeddings_dim = len(starspace_embeddings[row[0]])
 
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    return starspace_embeddings, embeddings_dim
 
 
 def question_to_vec(question, embeddings, dim):
@@ -59,15 +61,15 @@ def question_to_vec(question, embeddings, dim):
 
     # Hint: you have already implemented exactly this function in the 3rd assignment.
 
-    ########################
-    #### YOUR CODE HERE ####
-    ########################
-
-    # remove this when you're done
-    raise NotImplementedError(
-        "Open utils.py and fill with your code. In case of Google Colab, download"
-        "(https://github.com/hse-aml/natural-language-processing/blob/master/project/utils.py), "
-        "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+    result = np.zeros(shape=(dim,))
+    question = question.split()
+    N = 0
+    for word in question:
+      if not word in embeddings: continue
+      N += 1
+      result += embeddings[word]
+    if N > 0: result /= N
+    return result
 
 
 def unpickle_file(filename):
