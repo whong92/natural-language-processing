@@ -154,7 +154,7 @@ class OpensubsData:
         conversations = []
         dirList = self.filesInDir(dirName)
         for filepath in tqdm(dirList, "OpenSubtitles data files"):
-            if filepath.endswith('gz'):
+            if filepath.endswith('.xml'):
                 try:
                     doc = self.getXML(filepath)
                     conversations.extend(self.genList(doc))
@@ -264,8 +264,18 @@ def splitConversations(conversations, max_len=20, fast_preprocessing=True):
         for i in range(len(lines) - 1):
             request = extractText(lines[i]['text'])
             reply = extractText(lines[i + 1]['text'])
-            if 0 < len(request) <= max_len and 0 < len(reply) <= max_len:
-                data += [(request, reply)]
+            
+            request_words = request.split()
+            reply_words = reply.split()
+            if len(request_words) == 0 or len(reply_words) == 0:
+                continue
+            request_words = request_words[:max_len]
+            reply_words = reply_words[:max_len]
+            request = ' '.join(request_words)
+            reply = ' '.join(reply_words)
+            
+            data += [(request, reply)]
+
     return data
 
 

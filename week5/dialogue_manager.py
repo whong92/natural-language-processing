@@ -21,12 +21,11 @@ class ThreadRanker(object):
             The search is performed across the threads with a given tag.
         """
         thread_ids, thread_embeddings = self.__load_embeddings_by_tag(tag_name)
+        question_vec = question_to_vec(question, self.word_embeddings, self.embeddings_dim)
 
-        # HINT: you have already implemented a similar routine in the 3rd assignment.
-        
-        question_vec = #### YOUR CODE HERE ####
-        best_thread = #### YOUR CODE HERE ####
-        
+        question_embedding = np.expand_dims(question_to_vec(question, self.word_embeddings, self.embeddings_dim), axis=0)
+        best_thread = pairwise_distances_argmin(np.expand_dims(question_vec, axis=0), thread_embeddings)[0]
+
         return thread_ids[best_thread]
 
 
@@ -55,15 +54,9 @@ class DialogueManager(object):
         # Note that we use chatterbot==0.7.6 in this project. 
         # You are welcome to experiment with other versions but they might have slightly different API.
         
-        ########################
-        #### YOUR CODE HERE ####
-        ########################
-
-        # remove this when you're done
-        raise NotImplementedError(
-            "Open dialogue_manager.py and fill with your code. In case of Google Colab, download"
-            "(https://github.com/hse-aml/natural-language-processing/blob/master/project/dialogue_manager.py), "
-            "edit locally and upload using '> arrow on the left edge' -> Files -> UPLOAD")
+        self.chatbot = ChatBot("Billy Holiday")
+        self.chatbot.set_trainer(ChatterBotCorpusTrainer)
+        self.chatbot.train("chatterbot.corpus.english")
        
     def generate_answer(self, question):
         """Combines stackoverflow and chitchat parts using intent recognition."""
@@ -71,22 +64,22 @@ class DialogueManager(object):
         # Recognize intent of the question using `intent_recognizer`.
         # Don't forget to prepare question and calculate features for the question.
         
-        prepared_question = #### YOUR CODE HERE ####
-        features = #### YOUR CODE HERE ####
-        intent = #### YOUR CODE HERE ####
+        prepared_question = text_prepare(question)
+        features = self.tfidf_vectorizer.transform([prepared_question])
+        intent = self.intent_recognizer.predict(features)[0]
 
         # Chit-chat part:   
         if intent == 'dialogue':
             # Pass question to chitchat_bot to generate a response.       
-            response = #### YOUR CODE HERE ####
+            response = self.chatbot.get_response(question)
             return response
         
         # Goal-oriented part:
         else:        
             # Pass features to tag_classifier to get predictions.
-            tag = #### YOUR CODE HERE ####
+            tag = self.tag_classifier.predict(features)[0]
             
             # Pass prepared_question to thread_ranker to get predictions.
-            thread_id = #### YOUR CODE HERE ####
+            thread_id = self.thread_ranker.get_best_thread(prepared_question, tag)
             
             return self.ANSWER_TEMPLATE % (tag, thread_id)
